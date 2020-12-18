@@ -14,24 +14,17 @@ public class Main {
 
     public static final boolean TESTING = false;
 
-    String test = "";
-
     public static void main(String[] args) {
-        for(Map.Entry<String, String> entry : Config.GetCharacterLinks().entrySet())
-        {
-            List<Dictionary<String,String>> toWriteMoveList = new ArrayList<>();
+        for (Map.Entry<String, String> entry : Config.GetCharacterLinks().entrySet()) {
+            List<Dictionary<String, String>> toWriteMoveList = new ArrayList<>();
 
-            try
-            {
+            try {
                 Document doc = null;
 
-                if(TESTING)
-                {
+                if (TESTING) {
                     File file = new File("GanryuData.html");
                     doc = Jsoup.parse(file, "UTF-8", "");
-                }
-                else
-                {
+                } else {
                     doc = Jsoup.connect(entry.getValue()).get();
                 }
 
@@ -40,14 +33,11 @@ public class Main {
                 //remove 10 hit combos for now
                 tbodies.remove(tbodies.size() - 1);
 
-                for(Element tbody : tbodies)
-                {
+                for (Element tbody : tbodies) {
                     String typeOfMove = tbody.child(0).child(0).text();
 
-                    for(Element tr : tbody.children())
-                    {
-                        if(tr.className().equals("title") || tr.child(0).className().equals("title") || tr.parent().parent().className().equals("left"))
-                        {
+                    for (Element tr : tbody.children()) {
+                        if (tr.className().equals("title") || tr.child(0).className().equals("title") || tr.parent().parent().className().equals("left")) {
                             continue;
                         }
 
@@ -65,7 +55,8 @@ public class Main {
 
                         String notes = LabelExtractor.ExtractNotes(rawNotes);
                         String moveName = moveInformation.select("span[class='en_name']").get(0).text();
-                        String moveDamage = moveInformation.select("span[class='en_name']").get(1).text();;
+                        String moveDamage = moveInformation.select("span[class='en_name']").get(1).text();
+                        ;
                         String moveInput = labelInformation.get("moves");
                         String hitLevel = labelInformation.get("hitLevel");
                         String startup = tr.children().get(1).text();
@@ -76,16 +67,11 @@ public class Main {
 
                         Dictionary<String, String> toWriteInfo = new Hashtable<>();
 
-                        if(typeOfMove.equals("Rage Art"))
-                        {
+                        if (typeOfMove.equals("Rage Art")) {
                             toWriteInfo.put("Name", "Rage Art");
-                        }
-                        else if (typeOfMove.equals("Rage Drive"))
-                        {
+                        } else if (typeOfMove.equals("Rage Drive")) {
                             toWriteInfo.put("Name", "Rage Drive");
-                        }
-                        else if(typeOfMove.equals("Throws"))
-                        {
+                        } else if (typeOfMove.equals("Throws")) {
                             var throwBreak = fixNotesWithMoveInputs(tr.children().get(3));
 
                             toWriteInfo.put("Name", moveName);
@@ -98,9 +84,7 @@ public class Main {
 
                             toWriteMoveList.add(toWriteInfo);
                             continue;
-                        }
-                        else
-                        {
+                        } else {
                             toWriteInfo.put("Name", moveName);
                         }
 
@@ -119,81 +103,62 @@ public class Main {
 
                     JsonWriter.WriteJson(entry.getKey(), toWriteMoveList);
                 }
-            }
-            catch (Exception e)
-            {
+            } catch (Exception e) {
                 JsonWriter.WriteJson(entry.getKey(), toWriteMoveList);
             }
         }
     }
 
-    private static String fixNotesWithMoveInputs(Element noteElement)
-    {
+    private static String fixNotesWithMoveInputs(Element noteElement) {
         StringBuilder toReturnSB = new StringBuilder();
 
-        for(var node : noteElement.childNodes())
-        {
-            if(node.attr("tag", "img") != null && !(node instanceof TextNode))
-            {
+        for (var node : noteElement.childNodes()) {
+            if (node.attr("tag", "img") != null && !(node instanceof TextNode)) {
                 String imgSrc = node.attr("src");
                 String move = "";
 
-                try
-                {
-                    if(Main.TESTING)
-                    {
+                try {
+                    if (Main.TESTING) {
                         move = imgSrc.substring(imgSrc.indexOf("/") + 1, imgSrc.indexOf(".dib"));
-                    }
-                    else
-                    {
+                    } else {
                         move = imgSrc.substring(imgSrc.indexOf("/") + 1, imgSrc.indexOf(".bmp"));
                     }
-                }
-                catch(Exception e)
-                {
+                } catch (Exception e) {
                     move = " ";
                 }
 
                 String convertedMove = Config.GetMoveConversionMap().get(move);
 
-                if(convertedMove != null)
-                {
+                if (convertedMove != null) {
                     toReturnSB.append(convertedMove);
                 }
-            }
-            else
-            {
-                toReturnSB.append(((TextNode)node).text());
+            } else {
+                toReturnSB.append(((TextNode) node).text());
             }
 
         }
         return toReturnSB.toString();
     }
 
-    public static Dictionary<String, String> ExtractLabelInformation(List<Node> nodes)
-    {
+    public static Dictionary<String, String> ExtractLabelInformation(List<Node> nodes) {
         var cleanNodes = GetCleanNodes(nodes);
 
         Dictionary<String, String> labelInformation = new Hashtable<>();
         List<Node> moveElements = new ArrayList<>();
 
         // Gets rid of the move name and move damage, since these are already retrieved
-        for(int i = 1; i < cleanNodes.size() - 2; i++)
-        {
+        for (int i = 1; i < cleanNodes.size() - 2; i++) {
             moveElements.add(cleanNodes.get(i));
         }
 
         String moveInput = LabelExtractor.ExtractMoves(moveElements);
         String hitLevel = "";
 
-        try
-        {
+        try {
             hitLevel = cleanNodes.get(cleanNodes.size() - 2).toString();
             hitLevel = hitLevel.replace("/", "");
             hitLevel = hitLevel.replace(" ", "");
-        }
-        catch(Exception e)
-        {
+        } catch (Exception e) {
             hitLevel = " ";
         }
 
@@ -203,26 +168,20 @@ public class Main {
         return labelInformation;
     }
 
-    private static List<Node> GetCleanNodes(List<Node> nodeList)
-    {
+    private static List<Node> GetCleanNodes(List<Node> nodeList) {
         var cleanNodes = new ArrayList<Node>();
 
-        for(Node node : nodeList)
-        {
-            if(node instanceof Element)
-            {
-                var element = (Element)node;
-                if(element.is("br"))
-                {
+        for (Node node : nodeList) {
+            if (node instanceof Element) {
+                var element = (Element) node;
+                if (element.is("br")) {
                     continue;
                 }
             }
 
-            if(node instanceof TextNode)
-            {
-                var textNode = (TextNode)node;
-                if(textNode.isBlank())
-                {
+            if (node instanceof TextNode) {
+                var textNode = (TextNode) node;
+                if (textNode.isBlank()) {
                     continue;
                 }
             }

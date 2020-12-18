@@ -14,36 +14,27 @@ import java.util.List;
 
 public class JsonWriter {
 
-    public static void WriteJson(String fileName, List<Dictionary<String,String>> moveInformation)
-    {
+    public static void WriteJson(String fileName, List<Dictionary<String, String>> moveInformation) {
         CreateDirIfNotExists();
 
         ObjectMapper mapper = new ObjectMapper();
         ObjectWriter writer = mapper.writer(new DefaultPrettyPrinter());
         File toWriteFile = new File(".\\extracted_json\\" + fileName + ".json");
 
-        try
-        {
+        try {
             writer.writeValue(toWriteFile, moveInformation);
-        }
-        catch (IOException e)
-        {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private static void CreateDirIfNotExists()
-    {
+    private static void CreateDirIfNotExists() {
         Path path = Paths.get(".\\extracted_json\\");
 
-        if(Files.notExists(path))
-        {
-            try
-            {
+        if (Files.notExists(path)) {
+            try {
                 Files.createDirectory(path);
-            }
-            catch (IOException e)
-            {
+            } catch (IOException e) {
                 e.printStackTrace();
             }
         }
