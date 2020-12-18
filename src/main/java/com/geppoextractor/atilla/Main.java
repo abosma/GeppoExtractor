@@ -14,6 +14,8 @@ public class Main {
 
     public static final boolean TESTING = false;
 
+    String test = "";
+
     public static void main(String[] args) {
         for(Map.Entry<String, String> entry : Config.GetCharacterLinks().entrySet())
         {
