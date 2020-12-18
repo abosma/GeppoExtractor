@@ -7,22 +7,32 @@ import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 
+import java.io.File;
 import java.util.*;
 
 public class Main {
 
+    public static final boolean TESTING = false;
+
     public static void main(String[] args) {
-        for(Map.Entry<String, String> entry : Config.GetUrls().entrySet())
+        for(Map.Entry<String, String> entry : Config.GetCharacterLinks().entrySet())
         {
             List<Dictionary<String,String>> toWriteMoveList = new ArrayList<>();
 
             try
             {
-                // For testing using a file instead of pinging the webserver over and over
-                //File file = new File("GanryuData.html");
-                //Document doc = Jsoup.parse(file, "UTF-8", "");
+                Document doc = null;
 
-                Document doc = Jsoup.connect(entry.getValue()).get();
+                if(TESTING)
+                {
+                    File file = new File("GanryuData.html");
+                    doc = Jsoup.parse(file, "UTF-8", "");
+                }
+                else
+                {
+                    doc = Jsoup.connect(entry.getValue()).get();
+                }
+
                 Elements tbodies = doc.getElementsByTag("tbody");
 
                 //remove 10 hit combos for now
@@ -30,6 +40,8 @@ public class Main {
 
                 for(Element tbody : tbodies)
                 {
+                    String typeOfMove = tbody.child(0).child(0).text();
+
                     for(Element tr : tbody.children())
                     {
                         if(tr.className().equals("title") || tr.child(0).className().equals("title") || tr.parent().parent().className().equals("left"))
@@ -60,9 +72,36 @@ public class Main {
                         String onCounterHit = tr.children().get(4).text();
                         String totalFrames = tr.children().get(5).text();
 
-                        Dictionary<String, String> toWriteInfo = new Hashtable<String, String>();
+                        Dictionary<String, String> toWriteInfo = new Hashtable<>();
 
-                        toWriteInfo.put("Name", moveName);
+                        if(typeOfMove.equals("Rage Art"))
+                        {
+                            toWriteInfo.put("Name", "Rage Art");
+                        }
+                        else if (typeOfMove.equals("Rage Drive"))
+                        {
+                            toWriteInfo.put("Name", "Rage Drive");
+                        }
+                        else if(typeOfMove.equals("Throws"))
+                        {
+                            var throwBreak = fixNotesWithMoveInputs(tr.children().get(3));
+
+                            toWriteInfo.put("Name", moveName);
+                            toWriteInfo.put("Command", moveInput);
+                            toWriteInfo.put("Damage", moveDamage);
+                            toWriteInfo.put("Property", hitLevel);
+                            toWriteInfo.put("BreakThrow", throwBreak);
+                            toWriteInfo.put("AfterThrow", onBlock);
+                            toWriteInfo.put("Notes", totalFrames);
+
+                            toWriteMoveList.add(toWriteInfo);
+                            continue;
+                        }
+                        else
+                        {
+                            toWriteInfo.put("Name", moveName);
+                        }
+
                         toWriteInfo.put("Command", moveInput);
                         toWriteInfo.put("Property", hitLevel);
                         toWriteInfo.put("Damage", moveDamage);
@@ -82,9 +121,51 @@ public class Main {
             catch (Exception e)
             {
                 JsonWriter.WriteJson(entry.getKey(), toWriteMoveList);
-                continue;
             }
         }
+    }
+
+    private static String fixNotesWithMoveInputs(Element noteElement)
+    {
+        StringBuilder toReturnSB = new StringBuilder();
+
+        for(var node : noteElement.childNodes())
+        {
+            if(node.attr("tag", "img") != null && !(node instanceof TextNode))
+            {
+                String imgSrc = node.attr("src");
+                String move = "";
+
+                try
+                {
+                    if(Main.TESTING)
+                    {
+                        move = imgSrc.substring(imgSrc.indexOf("/") + 1, imgSrc.indexOf(".dib"));
+                    }
+                    else
+                    {
+                        move = imgSrc.substring(imgSrc.indexOf("/") + 1, imgSrc.indexOf(".bmp"));
+                    }
+                }
+                catch(Exception e)
+                {
+                    move = " ";
+                }
+
+                String convertedMove = Config.GetMoveConversionMap().get(move);
+
+                if(convertedMove != null)
+                {
+                    toReturnSB.append(convertedMove);
+                }
+            }
+            else
+            {
+                toReturnSB.append(((TextNode)node).text());
+            }
+
+        }
+        return toReturnSB.toString();
     }
 
     public static Dictionary<String, String> ExtractLabelInformation(List<Node> nodes)

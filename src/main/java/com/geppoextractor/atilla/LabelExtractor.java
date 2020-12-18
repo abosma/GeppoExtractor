@@ -12,7 +12,7 @@ public class LabelExtractor {
     public static String ExtractMoves(List<Node> elements)
     {
         List<String> moveInput = new ArrayList<>();
-        var moveHashtable = Config.GetMoveHashtable();
+        var moveHashtable = Config.GetMoveConversionMap();
 
         for(Node input : elements)
         {
@@ -28,6 +28,13 @@ public class LabelExtractor {
                     continue;
                 }
 
+                if(extraText.contains("just"))
+                {
+                    extraText = extraText.replace("just", ":");
+                    moveInput.add(extraText);
+                    continue;
+                }
+
                 extraText = String.format(" %s ", extraText);
 
                 moveInput.add(extraText);
@@ -39,7 +46,14 @@ public class LabelExtractor {
 
             try
             {
-                move = imgSrc.substring(imgSrc.indexOf("/") + 1, imgSrc.indexOf(".bmp"));
+                if(Main.TESTING)
+                {
+                    move = imgSrc.substring(imgSrc.indexOf("/") + 1, imgSrc.indexOf(".dib"));
+                }
+                else
+                {
+                    move = imgSrc.substring(imgSrc.indexOf("/") + 1, imgSrc.indexOf(".bmp"));
+                }
             }
             catch(Exception e)
             {
@@ -67,7 +81,7 @@ public class LabelExtractor {
         // Replace ☆ neutral input with ,n,
         if(toReturnString.contains("☆"))
         {
-            toReturnString = toReturnString.replace(" ☆ ", ",n,");
+            toReturnString = toReturnString.replace(" ☆ ", "n");
         }
 
         return toReturnString;
@@ -116,13 +130,13 @@ public class LabelExtractor {
         // Adds moves before the slide inputs
         if(!StringIsEmpty(movesBeforeBrackets))
         {
-            toReturnMoveInput = movesBeforeBrackets + ", " + toReturnMoveInput;
+            toReturnMoveInput = movesBeforeBrackets + " " + toReturnMoveInput;
         }
 
         // Adds moves after the slide inputs
         if(!StringIsEmpty(movesAfterBrackets))
         {
-            toReturnMoveInput = toReturnMoveInput + ", " + movesAfterBrackets;
+            toReturnMoveInput = toReturnMoveInput + " " + movesAfterBrackets;
         }
 
         return toReturnMoveInput;
@@ -144,24 +158,24 @@ public class LabelExtractor {
                 var element = (Element)node;
                 var tagName = element.tag().getName();
 
-                if(tagName == "br")
+                if(tagName.equals("br"))
                 {
                     toReturnInformation.append("\n");
                     continue;
                 }
 
-                if(tagName == "span" && element.hasClass("icon"))
+                if(tagName.equals("span") && element.hasClass("icon"))
                 {
                     toReturnInformation.append(element.childNode(0).toString() + " ");
                     continue;
                 }
 
-                if(tagName == "span" && element.hasClass("patch"))
+                if(tagName.equals("span") && element.hasClass("patch"))
                 {
                     continue;
                 }
 
-                if(tagName == "div")
+                if(tagName.equals("div"))
                 {
                     continue;
                 }
