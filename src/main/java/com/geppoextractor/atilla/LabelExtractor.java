@@ -1,5 +1,6 @@
 package com.geppoextractor.atilla;
 
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
@@ -7,11 +8,15 @@ import org.jsoup.nodes.TextNode;
 
 import java.util.*;
 
+@Log4j2
 public class LabelExtractor {
 
-    public static String ExtractMoves(List<Node> elements) {
+    private LabelExtractor(){}
+
+    private static final Map<String, String> moveConversionMap = Config.getMoveConversionMap();
+
+    public static String extractMoves(List<Node> elements) {
         List<String> moveInput = new ArrayList<>();
-        var moveHashtable = Config.GetMoveConversionMap();
 
         for (Node input : elements) {
             if (input instanceof TextNode) {
@@ -36,44 +41,31 @@ public class LabelExtractor {
                 continue;
             }
 
-            String imgSrc = input.attr("src");
-            String move = "";
+            String move = Helper.getImageStringFromDocument(input);
+            String translatedMove = moveConversionMap.get(move);
 
-            try {
-                if (Main.TESTING) {
-                    move = imgSrc.substring(imgSrc.indexOf("/") + 1, imgSrc.indexOf(".dib"));
-                } else {
-                    move = imgSrc.substring(imgSrc.indexOf("/") + 1, imgSrc.indexOf(".bmp"));
-                }
-            } catch (Exception e) {
-                move = " ";
-            }
-
-            moveInput.add(moveHashtable.get(move));
+            moveInput.add(translatedMove);
         }
 
-        StringBuffer stringBuffer = new StringBuffer();
+        StringBuilder stringBuilder = new StringBuilder();
 
         for (String move : moveInput) {
-            stringBuffer.append(move);
+            stringBuilder.append(move);
         }
 
-        var toReturnString = stringBuffer.toString();
+        var toReturnString = stringBuilder.toString();
 
         // Replace inputs between 【】 to normal 1~1 slide input format
         if (toReturnString.contains("【") || toReturnString.contains("】")) {
-            toReturnString = ReplaceSlideInput(toReturnString);
+            toReturnString = replaceSlideInput(toReturnString);
         }
 
-        // Replace ☆ neutral input with ,n,
-        if (toReturnString.contains("☆")) {
-            toReturnString = toReturnString.replace(" ☆ ", "n");
-        }
+        toReturnString = Helper.replaceNeutralInput(toReturnString);
 
         return toReturnString;
     }
 
-    private static String ReplaceSlideInput(String toReplaceString) {
+    private static String replaceSlideInput(String toReplaceString) {
         var movesBeforeBrackets = StringUtils.substringBefore(toReplaceString, "【").trim();
         var movesBetweenBrackets = StringUtils.substringsBetween(toReplaceString, "【", "】");
         var movesAfterBrackets = StringUtils.substringAfterLast(toReplaceString, "】").trim();
@@ -81,9 +73,10 @@ public class LabelExtractor {
         List<String> moves = new ArrayList<>();
         String toReturnMoveInput = "";
 
+        // TODO: Find out how to fix this after removing the , from the move in extractMoves
         // Replaces slide inputs from 1, 2 to 1~2
-        for (int i = 0; i < movesBetweenBrackets.length; i++) {
-            var toAddString = movesBetweenBrackets[i];
+        for (String movesBetweenBracket : movesBetweenBrackets) {
+            var toAddString = movesBetweenBracket;
 
             toAddString = toAddString.replace(", ", "~");
             toAddString = toAddString.trim();
@@ -105,24 +98,20 @@ public class LabelExtractor {
         }
 
         // Adds moves before the slide inputs
-        if (!StringIsEmpty(movesBeforeBrackets)) {
+        if (!StringUtils.isBlank(movesBeforeBrackets)) {
             toReturnMoveInput = movesBeforeBrackets + " " + toReturnMoveInput;
         }
 
         // Adds moves after the slide inputs
-        if (!StringIsEmpty(movesAfterBrackets)) {
+        if (!StringUtils.isBlank(movesAfterBrackets)) {
             toReturnMoveInput = toReturnMoveInput + " " + movesAfterBrackets;
         }
 
         return toReturnMoveInput;
     }
 
-    private static boolean StringIsEmpty(String toCheckString) {
-        return toCheckString.isBlank() || toCheckString.isEmpty();
-    }
-
-    public static String ExtractNotes(List<Node> elements) {
-        StringBuffer toReturnInformation = new StringBuffer();
+    public static String extractNotes(List<Node> elements) {
+        StringBuilder toReturnInformation = new StringBuilder();
 
         for (Node node : elements) {
             if (node instanceof Element) {

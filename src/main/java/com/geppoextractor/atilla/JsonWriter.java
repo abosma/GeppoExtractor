@@ -14,8 +14,8 @@ import java.util.List;
 
 public class JsonWriter {
 
-    public static void WriteJson(String fileName, List<Dictionary<String, String>> moveInformation) {
-        CreateDirIfNotExists();
+    public static void writeJson(String fileName, List<Dictionary<String, String>> moveInformation) {
+        createDirIfNotExists();
 
         ObjectMapper mapper = new ObjectMapper();
         ObjectWriter writer = mapper.writer(new DefaultPrettyPrinter());
@@ -28,7 +28,7 @@ public class JsonWriter {
         }
     }
 
-    private static void CreateDirIfNotExists() {
+    private static void createDirIfNotExists() {
         Path path = Paths.get(".\\extracted_json\\");
 
         if (Files.notExists(path)) {
