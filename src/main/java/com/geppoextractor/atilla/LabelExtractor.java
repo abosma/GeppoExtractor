@@ -124,15 +124,11 @@ public class LabelExtractor {
                 }
 
                 if (tagName.equals("span") && element.hasClass("icon")) {
-                    toReturnInformation.append(element.childNode(0).toString() + " ");
+                    toReturnInformation.append(element.childNode(0).toString()).append(" ");
                     continue;
                 }
 
-                if (tagName.equals("span") && element.hasClass("patch")) {
-                    continue;
-                }
-
-                if (tagName.equals("div")) {
+                if (tagName.equals("span") && element.hasClass("patch") || tagName.equals("div")) {
                     continue;
                 }
             }
