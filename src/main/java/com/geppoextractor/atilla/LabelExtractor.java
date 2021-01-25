@@ -6,7 +6,9 @@ import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 @Log4j2
 public class LabelExtractor {
@@ -23,13 +25,8 @@ public class LabelExtractor {
                 var extraText = ((TextNode) input).text().trim();
 
                 // Replaced just frame unicode with the better known : input
-                if (extraText.contains("Ｊ")) {
+                if (extraText.contains("Ｊ") || extraText.contains("just")) {
                     extraText = extraText.replace("Ｊ", ":");
-                    moveInput.add(extraText);
-                    continue;
-                }
-
-                if (extraText.contains("just")) {
                     extraText = extraText.replace("just", ":");
                     moveInput.add(extraText);
                     continue;
@@ -73,13 +70,10 @@ public class LabelExtractor {
         List<String> moves = new ArrayList<>();
         String toReturnMoveInput = "";
 
-        // TODO: Find out how to fix this after removing the , from the move in extractMoves
-        // Replaces slide inputs from 1, 2 to 1~2
         for (String movesBetweenBracket : movesBetweenBrackets) {
-            var toAddString = movesBetweenBracket;
+            var toAddString = movesBetweenBracket.trim();
 
-            toAddString = toAddString.replace(", ", "~");
-            toAddString = toAddString.trim();
+            toAddString = toAddString.substring(0, toAddString.length() - 1) + "~" + toAddString.substring(toAddString.length() - 1);
 
             moves.add(toAddString);
         }
